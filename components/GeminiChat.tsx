@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai'; // ✅ تم التصحيح: المكتبة الصحيحة
 import { Send, Bot, User, Loader2, Sparkles, HelpCircle, ChevronLeft, MessageSquare } from 'lucide-react';
 
 const SUGGESTED_QUESTIONS = [
@@ -51,13 +51,15 @@ const GeminiChat: React.FC = () => {
     setLoading(true);
 
     try {
-      const apiKey = process.env.API_KEY; 
+      // ✅ التصحيح: استخدام import.meta.env.VITE_GEMINI_API_KEY (لـ Vite)
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
       
       if (!apiKey) {
-        throw new Error("API Key not found. Please configure process.env.API_KEY");
+        throw new Error("API Key not found. Please configure import.meta.env.VITE_GEMINI_API_KEY");
       }
 
-      const ai = new GoogleGenAI({ apiKey });
+      // ✅ التصحيح: إنشاء الكائن الصحيح من المكتبة الصحيحة
+      const genAI = new GoogleGenerativeAI(apiKey);
       
       const systemInstruction = `
         أنت مستشار ذكي ومسؤول لمشروع وطني جزائري يسمى "مشاعل الأمة – سفراء القيم".
@@ -87,15 +89,19 @@ const GeminiChat: React.FC = () => {
         - ركز على القيم: الأخلاقية، الوطنية، الإنسانية، الاجتماعية، والقيادية.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: textToSend,
-        config: {
-          systemInstruction: systemInstruction,
-        }
+      // ✅ التصحيح: إنشاء النموذج أولاً مع systemInstruction وتحديد النموذج هنا
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash", // ✅ تم التغيير إلى النموذج المستقر
+        systemInstruction: systemInstruction,
       });
 
-      const text = response.text;
+      // ✅ التصحيح: استخدام generateContent بالهيكل الصحيح (بدون config)
+      const response = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: textToSend }] }],
+      });
+
+      // ✅ التصحيح: استخراج النص من response.text() وليس من response.text
+      const text = response.response.text();
       if (text) {
         setMessages(prev => [...prev, { role: 'model', text: text }]);
       }
